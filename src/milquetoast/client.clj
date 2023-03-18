@@ -74,7 +74,7 @@
 (defrecord MilquetoastJsonClient [client]
   IMilquetoastClient
   (send-message! [_ topic msg opts]
-    (.publish client topic (create-message (json/write-str msg) opts)))
+    (send-message! client topic (json/write-str msg) opts))
   (stop! [_] (stop! client))
   (add-channel! [_ chan] (add-channel! client chan))
   (subscribe-topic! [_ topic opts]
@@ -102,11 +102,13 @@
                                   :or   {buffer-size 1}}]
   (subscribe-topic! client topic {:buffer-size buffer-size}))
 
-(defn connect! [& {:keys [broker-uri username password verbose]
-                   :or   {verbose false}}]
-  (MilquetoastClient. (create-mqtt-client! broker-uri username password)
-                      (atom [])
-                      verbose))
+(defn connect! [& {:keys [host port scheme username password verbose]
+                   :or   {verbose false
+                          scheme  :tcp}}]
+  (let [broker-uri (str (name scheme) "://" host ":" port)]
+    (MilquetoastClient. (create-mqtt-client! broker-uri username password)
+                        (atom [])
+                        verbose)))
 
 (defn connect-json! [& args]
   (MilquetoastJsonClient. (apply connect! args)))
