@@ -46,8 +46,7 @@
       (println
        (str "stopping " (count @open-channels) " channels")))
     (doseq [chan @open-channels]
-      (go (>! chan :stop)
-          (async/close! chan)))
+      (async/close! chan))
     true)
   (add-channel! [_ chan]
     (swap! open-channels conj chan))
@@ -69,7 +68,8 @@
 
 (defn pipe [in xf]
   (let [out (async/chan)]
-    (async/pipeline (parallelism) out xf in)))
+    (async/pipeline (parallelism) out xf in)
+    out))
 
 (defrecord MilquetoastJsonClient [client]
   IMilquetoastClient
@@ -79,7 +79,7 @@
   (add-channel! [_ chan] (add-channel! client chan))
   (subscribe-topic! [_ topic opts]
     (pipe (subscribe-topic! client topic opts)
-          (fn [msg] (update msg :payload json/read-str)))))
+          (map (fn [msg] (update msg :payload json/read-str))))))
 
 (defn send! [client topic msg & {:keys [qos retain]
                                  :or   {qos 1 retain false}}]
@@ -93,7 +93,7 @@
   (let [chan (async/chan buffer-size)]
     (add-channel! client chan)
     (go-loop [msg (<! chan)]
-      (when (not= :stop msg)
+      (when msg
         (send-message! client topic msg {:qos qos :retain retain})
         (recur (<! chan))))
     chan))
