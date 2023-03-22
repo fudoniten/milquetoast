@@ -109,6 +109,9 @@
                                  :or   {qos 1 retain false}}]
   (send-message! client topic msg {:qos qos :retain retain}))
 
+(defn get! [client topic & options]
+  (get-topic! client topic options))
+
 (defn open-channel!
   [client topic & {:keys [buffer-size qos retain]
                    :or   {buffer-size 1
