@@ -1,5 +1,5 @@
 (ns milquetoast.client
-  (:require [clojure.core.async :as async :refer [go go-loop <! >! alts!!]]
+  (:require [clojure.core.async :as async :refer [go go-loop <! >! alts!! <!! timeout]]
             [clojure.data.json :as json])
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
@@ -15,6 +15,27 @@
     (doto (MqttClient. broker-uri client-id (MemoryPersistence.))
       (.connect opts))))
 
+(defn- retry-attempt [verbose f reconnect]
+  (let [wrapped-attempt (fn []
+                          (try [true (f)]
+                               (catch RuntimeException e
+                                 (do (when verbose
+                                       (println (format "exception: %s"
+                                                        (.toString e))))
+                                     [false e]))))
+        max-wait     (* 5 60 1000)] ;; wait at most 5 minutes
+    (loop [[success? result] (wrapped-attempt)
+           wait-ms 1000]
+      (if success?
+        result
+        (do (when verbose
+              (println (format "attempt failed, attempting reconnect")))
+            (reconnect)
+            (when verbose
+              (println (format "sleeping %s ms" wait-ms)))
+            (<!! (timeout wait-ms))
+            (recur (wrapped-attempt) (min (* wait-ms 1.25) max-wait)))))))
+
 (defn- create-message
   [msg {:keys [qos retain]
         :or {qos    1
@@ -24,13 +45,11 @@
     (.setRetained retain)))
 
 (defn- parse-message [mqtt-msg]
-  {
-   :id        (.getId mqtt-msg)
+  {:id        (.getId mqtt-msg)
    :qos       (.getQos mqtt-msg)
    :retained  (.isRetained mqtt-msg)
    :duplicate (.isDuplicate mqtt-msg)
-   :payload   (.toString mqtt-msg)
-   })
+   :payload   (.toString mqtt-msg)})
 
 (defprotocol IMilquetoastClient
   (send-message!    [_ topic msg opts])
@@ -42,7 +61,9 @@
 (defrecord MilquetoastClient [client open-channels verbose]
   IMilquetoastClient
   (send-message! [_ topic msg opts]
-    (.publish client topic (create-message msg opts)))
+    (retry-attempt verbose
+                   #(.publish client topic (create-message msg opts))
+                   #(.reconnect client)))
   (stop! [_]
     (when verbose
       (println
@@ -57,22 +78,26 @@
            :or   {buffer-size 1 qos 0}} opts
           chan (async/chan buffer-size)]
       (add-channel! self chan)
-      (.subscribe client topic qos
-                  (proxy [IMqttMessageListener] []
-                    (messageArrived [topic mqtt-message]
-                      (go (>! chan (assoc (parse-message mqtt-message)
-                                          :topic topic))))))
+      (retry-attempt verbose
+                     #(.subscribe client topic qos
+                                  (proxy [IMqttMessageListener] []
+                                    (messageArrived [topic mqtt-message]
+                                      (go (>! chan (assoc (parse-message mqtt-message)
+                                                          :topic topic))))))
+                     #(.reconnect client))
       chan))
   (get-topic! [_ topic opts]
     (let [{:keys [qos timeout] :or {qos 0 timeout 5}} opts
           result-chan (async/chan)]
-      (.subscribe client topic qos
-                  (proxy [IMqttMessageListener] []
-                    (messageArrived [topic mqtt-message]
-                      (go (>! result-chan (assoc (parse-message mqtt-message)
-                                                 :topic topic))
-                          (async/close! result-chan))
-                      (.unsubscribe client topic))))
+      (retry-attempt verbose
+                     #(.subscribe client topic qos
+                                  (proxy [IMqttMessageListener] []
+                                    (messageArrived [topic mqtt-message]
+                                      (go (>! result-chan (assoc (parse-message mqtt-message)
+                                                                 :topic topic))
+                                          (async/close! result-chan))
+                                      (.unsubscribe client topic))))
+                     #(.reconnect client))
       (first (alts!! [result-chan
                       (async/timeout (* timeout 1000))])))))
 
@@ -88,7 +113,8 @@
 
 (defn- json-parse-message [msg]
   (-> msg
-      (update :payload   #(json/read-str % :key-fn keyword))
+      (update :payload   (fn [payload]
+                           (json/read-str payload :key-fn keyword)))
       (assoc  :timestamp (Instant/now))))
 
 (defrecord MilquetoastJsonClient [client]
@@ -125,14 +151,16 @@
         (recur (<! chan))))
     chan))
 
-(defn subscribe! [client topic & {:keys [buffer-size qos]
-                                  :or   {buffer-size 1
-                                         qos         1}}]
+(defn subscribe!
+  [client topic & {:keys [buffer-size qos]
+                   :or   {buffer-size 1
+                          qos         1}}]
   (subscribe-topic! client topic {:buffer-size buffer-size :qos qos}))
 
-(defn connect! [& {:keys [host port scheme username password verbose]
-                   :or   {verbose false
-                          scheme  :tcp}}]
+(defn connect!
+  [& {:keys [host port scheme username password verbose]
+      :or   {verbose false
+             scheme  :tcp}}]
   (let [broker-uri (str (name scheme) "://" host ":" port)]
     (MilquetoastClient. (create-mqtt-client! broker-uri username password)
                         (atom [])
