@@ -5,13 +5,15 @@
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
            java.time.Instant))
 
-(defn- create-mqtt-client! [broker-uri username password]
+(defn- create-mqtt-client! [& {:keys [broker-uri username password]}]
   (let [client-id (MqttClient/generateClientId)
         opts (doto (MqttConnectOptions.)
                (.setCleanSession true)
-               (.setAutomaticReconnect true)
-               (.setPassword (char-array password))
-               (.setUserName username))]
+               (.setAutomaticReconnect true))]
+    (when username
+      (doto opts
+        (.setUserName username)
+        (.setPassword (char-array password))))
     (doto (MqttClient. broker-uri client-id (MemoryPersistence.))
       (.connect opts))))
 
@@ -158,11 +160,12 @@
   (subscribe-topic! client topic {:buffer-size buffer-size :qos qos}))
 
 (defn connect!
-  [& {:keys [host port scheme username password verbose]
+  [& {:keys [host port scheme verbose]
       :or   {verbose false
-             scheme  :tcp}}]
+             scheme  :tcp}
+      :as   opts}]
   (let [broker-uri (str (name scheme) "://" host ":" port)]
-    (MilquetoastClient. (create-mqtt-client! broker-uri username password)
+    (MilquetoastClient. (create-mqtt-client! (assoc opts :broker-uri broker-uri))
                         (atom [])
                         verbose)))
 
