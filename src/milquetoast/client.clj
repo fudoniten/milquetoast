@@ -51,7 +51,8 @@
    :qos       (.getQos mqtt-msg)
    :retained  (.isRetained mqtt-msg)
    :duplicate (.isDuplicate mqtt-msg)
-   :payload   (.toString mqtt-msg)})
+   :payload   (.toString mqtt-msg)
+   :payload-bytes (.getPayload mqtt-msg)})
 
 (defprotocol IMilquetoastClient
   (send-message!    [_ topic msg opts])
