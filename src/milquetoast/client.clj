@@ -1,6 +1,7 @@
 (ns milquetoast.client
   (:require [clojure.core.async :as async :refer [go go-loop <! >! alts!! <!! timeout]]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [clojure.core.async.impl.runtime])
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
            java.time.Instant))
