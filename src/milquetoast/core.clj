@@ -7,22 +7,11 @@
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence))
 
-(defn create-mqtt-client!
-  "Creates and connects an MQTT client with the provided broker URI, username, and password.
-   Returns the connected MQTT client instance."
+(defdeprecated create-mqtt-client!
   [& {:keys [broker-uri username password]
       :or   {username nil
              password nil}}]
-  (let [client-id (MqttClient/generateClientId)
-        opts (doto (MqttConnectOptions.)
-               (.setCleanSession true)
-               (.setAutomaticReconnect true))]
-    (when username
-      (doto opts
-        (.setUserName username)
-        (.setPassword (char-array password))))
-    (doto (MqttClient. broker-uri client-id (MemoryPersistence.))
-      (.connect opts))))
+  (api/connect! :host broker-uri :username username :password password))
 
 (defn- retry-attempt
   "Attempts to execute function `f`. If `f` throws a RuntimeException, logs the exception and attempts to reconnect before retrying `f`."
@@ -138,20 +127,12 @@
       msg
       nil)))
 
-(defn create-client
-  "Creates a new MilquetoastClient instance with the provided MQTT client and options."
+(defdeprecated create-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  (let [mqtt-client (create-mqtt-client! :broker-uri broker-uri
-                                         :username   username
-                                         :password   password)]
-    (MilquetoastClient. mqtt-client (atom []) verbose)))
+  (api/connect! :host broker-uri :username username :password password :verbose verbose))
 
-(defn create-json-client
-  "Creates a new MilquetoastJsonClient instance with the provided MQTT client."
+(defdeprecated create-json-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  (let [mqtt-client (create-mqtt-client! :broker-uri broker-uri
-                                         :username   username
-                                         :password   password)]
-    (MilquetoastJsonClient. mqtt-client (atom []) verbose)))
+  (api/connect-json! :host broker-uri :username username :password password :verbose verbose))
