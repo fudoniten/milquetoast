@@ -1,8 +1,6 @@
-(ns milquetoast.utils)
 (ns milquetoast.utils
   (:require [clojure.core.async :as async]
-            [clojure.data.json :as json]
-            [clojure.tools.logging :as log])
+            [clojure.data.json :as json])
   (:import java.time.Instant))
 
 (defn parallelism []

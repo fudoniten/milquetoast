@@ -1,4 +1,4 @@
-(ns milquetoast.client
+(ns milquetoast.client-test
   (:require [milquetoast.client :as sut]
             [clojure.test :as t]
             [org.eclipse.paho.client.mqttv3 MqttClient]))

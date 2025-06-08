@@ -9,3 +9,5 @@ target/
 result
 .lsp/
 .clj-kondo/
+.aider*
+.env

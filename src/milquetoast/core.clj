@@ -140,11 +140,18 @@
 
 (defn create-client
   "Creates a new MilquetoastClient instance with the provided MQTT client and options."
-  [mqtt-client & {:keys [verbose]
-                  :or   {verbose false}}]
-  (MilquetoastClient. mqtt-client (atom []) verbose))
+  [broker-uri username password & {:keys [verbose]
+                                   :or   {verbose false}}]
+  (let [mqtt-client (create-mqtt-client! :broker-uri broker-uri
+                                         :username   username
+                                         :password   password)]
+    (MilquetoastClient. mqtt-client (atom []) verbose)))
 
 (defn create-json-client
   "Creates a new MilquetoastJsonClient instance with the provided MQTT client."
-  [mqtt-client]
-  (MilquetoastJsonClient. mqtt-client))
+  [broker-uri username password & {:keys [verbose]
+                                   :or   {verbose false}}]
+  (let [mqtt-client (create-mqtt-client! :broker-uri broker-uri
+                                         :username   username
+                                         :password   password)]
+    (MilquetoastJsonClient. mqtt-client (atom []) verbose)))
