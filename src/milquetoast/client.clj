@@ -1,13 +1,35 @@
 (ns milquetoast.client
-  (:require [milquetoast.api :as api])
-  (:import [clojure.lang ExceptionInfo]))
+  (:require [milquetoast.api :as api]))
 
-(defn- deprecated [f]
-  (fn [& args]
-    (println (str "WARNING: The function '" (name f) "' in the 'milquetoast.client' namespace is deprecated. Please use 'milquetoast.api' instead."))
-    (apply f args)))
+(defn send! [client topic msg & {:keys [qos retain]
+                                 :or   {qos 1 retain false}}]
+  ...)
 
-(defmacro defdeprecated [name & body]
-  `(def ~name (deprecated (fn ~@body))))
+(defn get! [client topic & options]
+  ...)
 
-(println "WARNING: The 'milquetoast.client' namespace is deprecated. Please use 'milquetoast.api' instead.")
+(defn get-raw! [client topic & options]
+  ...)
+
+(defn open-channel!
+  [client topic & {:keys [buffer-size qos retain]
+                   :or   {buffer-size 1
+                          qos         1
+                          retain      false}}]
+  ...)
+
+(defn subscribe!
+  [client topic & {:keys [buffer-size qos]
+                   :or   {buffer-size 1
+                          qos         1}}]
+  ...)
+
+(defn connect!
+  [& {:keys [host port scheme verbose]
+      :or   {verbose false
+             scheme  :tcp}
+      :as   opts}]
+  ...)
+
+(defn connect-json! [& args]
+  ...)
