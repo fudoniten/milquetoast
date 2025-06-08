@@ -72,7 +72,6 @@
   (get-topic-raw!   [_ topic opts]))
 
 (defrecord MilquetoastClient
-  "Record implementing the IMilquetoastClient protocol for a basic MQTT client."
   [client open-channels verbose]
   IMilquetoastClient
   (send-message! [_ topic msg opts]
@@ -134,7 +133,6 @@
       (assoc  :timestamp (Instant/now))))
 
 (defrecord MilquetoastJsonClient
-  "Record implementing the IMilquetoastClient protocol for an MQTT client that sends and receives JSON messages."
   [client]
   IMilquetoastClient
   (send-message! [_ topic msg opts]
