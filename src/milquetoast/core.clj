@@ -1,10 +1,11 @@
 (ns milquetoast.core
-  (:require [clojure.core.async :as async :refer [go go-loop <! >! alts!! <!! timeout]]
+  (:require [clojure.core.async :as async :refer [go >! alts!! <!! timeout]]
             [clojure.data.json :as json]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+
+            [milquetoast.utils :refer [pipe json-parse-message]])
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
-           org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
-           java.time.Instant))
+           org.eclipse.paho.client.mqttv3.persist.MemoryPersistence))
 
 (defn create-mqtt-client!
   "Creates and connects an MQTT client with the provided broker URI, username, and password."
@@ -124,10 +125,10 @@
   (add-channel! [_ chan] (add-channel! client chan))
   (subscribe-topic! [_ topic opts]
     (pipe (subscribe-topic! client topic opts)
-          (map utils/json-parse-message)))
+          (map json-parse-message)))
   (get-topic! [_ topic opts]
     (if-let [msg (get-topic! client topic opts)]
-      (utils/json-parse-message msg)
+      (json-parse-message msg)
       nil))
   (get-topic-raw! [_ topic opts]
     (if-let [msg (get-topic! client topic opts)]
