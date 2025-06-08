@@ -1,6 +1,7 @@
-(ns milquetoast.api)
 (ns milquetoast.api
-  (:require [milquetoast.core :as core]
+  (:require [clojure.core.async :refer [chan <! go-loop]]
+
+            [milquetoast.core :as core]
             [milquetoast.utils :as utils]))
 
 (defn send!
@@ -25,7 +26,7 @@
                    :or   {buffer-size 1
                           qos         1
                           retain      false}}]
-  (let [chan (async/chan buffer-size)]
+  (let [chan (chan buffer-size)]
     (core/add-channel! client chan)
     (go-loop [msg (<! chan)]
       (when msg
@@ -48,8 +49,8 @@
       :as   opts}]
   (let [broker-uri (str (name scheme) "://" host ":" port)]
     (core/MilquetoastClient. (core/create-mqtt-client! (assoc opts :broker-uri broker-uri))
-                        (atom [])
-                        verbose)))
+                             (atom [])
+                             verbose)))
 
 (defn connect-json!
   "Connects to an MQTT broker with the provided arguments and configures the client to send and receive JSON messages."
