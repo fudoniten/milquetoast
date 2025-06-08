@@ -7,12 +7,6 @@
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence))
 
-(defdeprecated create-mqtt-client!
-  [& {:keys [broker-uri username password]
-      :or   {username nil
-             password nil}}]
-  (api/connect! :host broker-uri :username username :password password))
-
 (defn- retry-attempt
   "Attempts to execute function `f`. If `f` throws a RuntimeException, logs the exception and attempts to reconnect before retrying `f`."
   [verbose f reconnect]
@@ -127,12 +121,12 @@
       msg
       nil)))
 
-(defdeprecated create-client
+(defn create-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  (api/connect! :host broker-uri :username username :password password :verbose verbose))
+  ...)
 
-(defdeprecated create-json-client
+(defn create-json-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  (api/connect-json! :host broker-uri :username username :password password :verbose verbose))
+  ...)
