@@ -1,7 +1,8 @@
 (ns milquetoast.client
   (:require [clojure.core.async :as async :refer [go go-loop <! >! alts!! <!! timeout]]
             [clojure.data.json :as json]
-            [clojure.core.async.impl.runtime])
+            [clojure.core.async.impl.runtime]
+            [clojure.tools.logging :as log])
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
            java.time.Instant))
@@ -35,7 +36,7 @@
               (println (format "attempt failed, attempting reconnect")))
             (reconnect)
             (when verbose
-              (println (format "sleeping %s ms" wait-ms)))
+              (log/debug (format "sleeping %s ms" wait-ms)))
             (<!! (timeout wait-ms))
             (recur (wrapped-attempt) (min (* wait-ms 1.25) max-wait)))))))
 
@@ -71,7 +72,7 @@
                    #(.reconnect client)))
   (stop! [_]
     (when verbose
-      (println
+      (log/info
        (str "stopping " (count @open-channels) " channels")))
     (doseq [chan @open-channels]
       (async/close! chan))
