@@ -137,3 +137,14 @@
     (if-let [msg (get-topic! client topic opts)]
       msg
       nil)))
+
+(defn create-client
+  "Creates a new MilquetoastClient instance with the provided MQTT client and options."
+  [mqtt-client & {:keys [verbose]
+                  :or   {verbose false}}]
+  (MilquetoastClient. mqtt-client (atom []) verbose))
+
+(defn create-json-client
+  "Creates a new MilquetoastJsonClient instance with the provided MQTT client."
+  [mqtt-client]
+  (MilquetoastJsonClient. mqtt-client))
