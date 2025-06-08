@@ -22,7 +22,14 @@ To subscribe to a topic and receive messages:
 (def chan (milquetoast.api/subscribe! client "test/topic"))
 ```
 
-You can then take messages from the channel as they arrive.
+You can then take messages from the channel as they arrive. Here's an example of how to listen on the channel and print the messages:
+
+```clojure
+(go-loop []
+  (when-let [msg (<! chan)]
+    (println "Received message:" msg)
+    (recur)))
+```
 
 To disconnect from the broker:
 
