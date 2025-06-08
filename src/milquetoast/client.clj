@@ -6,7 +6,7 @@
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
            java.time.Instant))
 
-(defn- create-mqtt-client!
+(defn create-mqtt-client!
   "Creates and connects an MQTT client with the provided broker URI, username, and password."
   [& {:keys [broker-uri username password]}]
   (let [client-id (MqttClient/generateClientId)
@@ -20,7 +20,7 @@
     (doto (MqttClient. broker-uri client-id (MemoryPersistence.))
       (.connect opts))))
 
-(defn- retry-attempt
+(defn retry-attempt
   "Attempts to execute function `f`. If `f` throws a RuntimeException, logs the exception and attempts to reconnect before retrying `f`."
   [verbose f reconnect]
   (let [wrapped-attempt (fn []
@@ -42,7 +42,7 @@
             (<!! (timeout wait-ms))
             (recur (wrapped-attempt) (min (* wait-ms 1.25) max-wait)))))))
 
-(defn- create-message
+(defn create-message
   "Creates an MQTT message with the provided message string and options."
   [msg {:keys [qos retain]
         :or {qos    1
@@ -51,7 +51,7 @@
     (.setQos      qos)
     (.setRetained retain)))
 
-(defn- parse-message
+(defn parse-message
   "Parses an MQTT message into a map with keys :id, :qos, :retained, :duplicate, :payload, and :payload-bytes."
   [mqtt-msg]
   {:id        (.getId mqtt-msg)
@@ -115,7 +115,7 @@
                       (async/timeout (* timeout 1000))]))))
   (get-topic-raw! [c topic opts] (get-topic! c topic opts)))
 
-(defn- parallelism []
+(defn parallelism []
   (-> (Runtime/getRuntime)
       (.availableProcessors)
       (+ 1)))
@@ -125,7 +125,7 @@
     (async/pipeline (parallelism) out xf in)
     out))
 
-(defn- json-parse-message [msg]
+(defn json-parse-message [msg]
   (-> msg
       (update :payload   (fn [payload]
                            (json/read-str payload :key-fn keyword)))
