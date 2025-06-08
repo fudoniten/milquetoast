@@ -24,8 +24,7 @@
                           (try [true (f)]
                                (catch RuntimeException e
                                  (do (when verbose
-                                       (println (format "exception: %s"
-                                                        (.toString e))))
+                                       (log/error e "exception"))
                                      [false e]))))
         max-wait     (* 5 60 1000)] ;; wait at most 5 minutes
     (loop [[success? result] (wrapped-attempt)
@@ -33,7 +32,7 @@
       (if success?
         result
         (do (when verbose
-              (println (format "attempt failed, attempting reconnect")))
+              (log/warn "attempt failed, attempting reconnect"))
             (reconnect)
             (when verbose
               (log/debug (format "sleeping %s ms" wait-ms)))
