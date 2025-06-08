@@ -42,6 +42,8 @@
   (core/subscribe-topic! client topic {:buffer-size buffer-size :qos qos}))
 
 (defn connect!
+  "Connects to the MQTT broker with the provided host, port, username, password, scheme, and verbosity level.
+  Returns a new MilquetoastClient instance."
   [& {:keys [host port username password scheme verbose]
       :or   {verbose false
              scheme  :tcp}}]
@@ -52,6 +54,8 @@
                    :verbose    verbose)))
 
 (defn connect-json!
+  "Connects to the MQTT broker with the provided host, port, username, password, scheme, and verbosity level.
+  Returns a new MilquetoastJsonClient instance."
   [& {:keys [host port username password scheme verbose]
       :or   {verbose false
              scheme  :tcp}}]
