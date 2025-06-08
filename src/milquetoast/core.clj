@@ -8,8 +8,11 @@
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence))
 
 (defn create-mqtt-client!
-  "Creates and connects an MQTT client with the provided broker URI, username, and password."
-  [& {:keys [broker-uri username password]}]
+  "Creates and connects an MQTT client with the provided broker URI, username, and password.
+   Returns the connected MQTT client instance."
+  [& {:keys [broker-uri username password]
+      :or   {username nil
+             password nil}}]
   (let [client-id (MqttClient/generateClientId)
         opts (doto (MqttConnectOptions.)
                (.setCleanSession true)
@@ -21,14 +24,14 @@
     (doto (MqttClient. broker-uri client-id (MemoryPersistence.))
       (.connect opts))))
 
-(defn retry-attempt
+(defn- retry-attempt
   "Attempts to execute function `f`. If `f` throws a RuntimeException, logs the exception and attempts to reconnect before retrying `f`."
   [verbose f reconnect]
+  {:pre [(boolean? verbose) (fn? f) (fn? reconnect)]}
   (let [wrapped-attempt (fn []
                           (try [true (f)]
                                (catch RuntimeException e
-                                 (do (when verbose
-                                       (log/error e "exception"))
+                                 (do (log/error e "Exception occurred during retry attempt")
                                      [false e]))))
         max-wait     (* 5 60 1000)] ;; wait at most 5 minutes
     (loop [[success? result] (wrapped-attempt)
