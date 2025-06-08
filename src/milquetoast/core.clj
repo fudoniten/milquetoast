@@ -124,9 +124,11 @@
 (defn create-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  ...)
+  (let [client (MqttClient. broker-uri username password (MemoryPersistence.))]
+    (->MilquetoastClient client (atom []) verbose)))
 
 (defn create-json-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  ...)
+  (let [client (create-client broker-uri username password :verbose verbose)]
+    (->MilquetoastJsonClient client)))
