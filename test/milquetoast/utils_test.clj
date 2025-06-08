@@ -1,5 +1,6 @@
 (ns milquetoast.utils-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
+            [clojure.core.async :refer [chan >!! <!!]]
             [milquetoast.utils :as utils]))
 
 (deftest test-parallelism

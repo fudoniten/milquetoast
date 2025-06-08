@@ -7,7 +7,19 @@
   (:import [org.eclipse.paho.client.mqttv3 MqttClient MqttConnectOptions MqttMessage IMqttMessageListener]
            org.eclipse.paho.client.mqttv3.persist.MemoryPersistence))
 
-(defn- retry-attempt
+(defn- create-mqtt-client! [& {:keys [broker-uri username password]}]
+  (let [client-id (MqttClient/generateClientId)
+        opts (doto (MqttConnectOptions.)
+               (.setCleanSession true)
+               (.setAutomaticReconnect true))]
+    (when username
+      (doto opts
+        (.setUserName username)
+        (.setPassword (char-array password))))
+    (doto (MqttClient. broker-uri client-id (MemoryPersistence.))
+      (.connect opts))))
+
+(defn retry-attempt
   "Attempts to execute function `f`. If `f` throws a RuntimeException, logs the exception and attempts to reconnect before retrying `f`."
   [verbose f reconnect]
   {:pre [(boolean? verbose) (fn? f) (fn? reconnect)]}
@@ -124,7 +136,9 @@
 (defn create-client
   [broker-uri username password & {:keys [verbose]
                                    :or   {verbose false}}]
-  (let [client (MqttClient. broker-uri username password (MemoryPersistence.))]
+  (let [client (create-mqtt-client! :broker-uri broker-uri
+                                    :username   username
+                                    :password   password)]
     (->MilquetoastClient client (atom []) verbose)))
 
 (defn create-json-client
@@ -132,3 +146,6 @@
                                    :or   {verbose false}}]
   (let [client (create-client broker-uri username password :verbose verbose)]
     (->MilquetoastJsonClient client)))
+
+(def milquetoast-client? (partial instance? MilquetoastClient))
+(def milquetoast-json-client? (partial instance? MilquetoastJsonClient))

@@ -1,7 +1,7 @@
 (ns milquetoast.api
   (:require [clojure.core.async :refer [chan <! go-loop]]
 
-            [milquetoast.core :refer [create-client create-json-client]]
+            [milquetoast.core :as core]
             [milquetoast.utils :as utils]))
 
 (defn send!
@@ -48,10 +48,10 @@
       :or   {verbose false
              scheme  :tcp}}]
   (let [broker-uri (str (name scheme) "://" host ":" port)]
-    (create-client :broker-uri broker-uri
-                   :username   username
-                   :password   password
-                   :verbose    verbose)))
+    (core/create-client :broker-uri broker-uri
+                        :username   username
+                        :password   password
+                        :verbose    verbose)))
 
 (defn connect-json!
   "Connects to the MQTT broker with the provided host, port, username, password, scheme, and verbosity level.
@@ -60,7 +60,7 @@
       :or   {verbose false
              scheme  :tcp}}]
   (let [broker-uri (str (name scheme) "://" host ":" port)]
-    (create-json-client :broker-uri broker-uri
-                        :username   username
-                        :password   password
-                        :verbose    verbose)))
+    (core/create-json-client :broker-uri broker-uri
+                             :username   username
+                             :password   password
+                             :verbose    verbose)))
