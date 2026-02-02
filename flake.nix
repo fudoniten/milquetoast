@@ -16,7 +16,7 @@
       in {
         packages = rec {
           default = milquetoast;
-          milquetoast = helpers.packages."${system}".mkClojureLib {
+          milquetoast = helpers.legacyPackages."${system}".mkClojureLib {
             name = "org.fudo/milquetoast";
             src = ./.;
           };
@@ -25,7 +25,7 @@
         devShells = rec {
           default = updateDeps;
           updateDeps = pkgs.mkShell {
-            buildInputs = with helpers.packages."${system}";
+            buildInputs = with helpers.legacyPackages."${system}";
               [ (updateClojureDeps { }) ];
           };
         };
